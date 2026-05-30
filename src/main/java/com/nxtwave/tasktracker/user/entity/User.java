@@ -1,8 +1,8 @@
-package com.nxtwave.tasktracker.user;
+package com.nxtwave.tasktracker.user.entity;
 
 import com.nxtwave.tasktracker.common.entity.BaseEntity;
 import com.nxtwave.tasktracker.common.enums.Role;
-import com.nxtwave.tasktracker.organization.Organization;
+import com.nxtwave.tasktracker.organization.entity.Organization;
 
 import jakarta.persistence.*;
 import lombok.*;

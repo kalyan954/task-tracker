@@ -1,7 +1,7 @@
-package com.nxtwave.tasktracker.refreshtoken;
+package com.nxtwave.tasktracker.refreshToken.entity;
 
 import com.nxtwave.tasktracker.common.entity.BaseEntity;
-import com.nxtwave.tasktracker.user.User;
+import com.nxtwave.tasktracker.user.entity.User;
 
 import jakarta.persistence.*;
 import lombok.Getter;

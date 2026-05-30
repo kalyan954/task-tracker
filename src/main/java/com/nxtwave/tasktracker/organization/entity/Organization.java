@@ -1,4 +1,4 @@
-package com.nxtwave.tasktracker.organization;
+package com.nxtwave.tasktracker.organization.entity;
 
 import com.nxtwave.tasktracker.common.entity.BaseEntity;
 import jakarta.persistence.*;

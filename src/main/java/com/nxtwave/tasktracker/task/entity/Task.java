@@ -1,11 +1,11 @@
-package com.nxtwave.tasktracker.task;
+package com.nxtwave.tasktracker.task.entity;
 
 import java.time.LocalDate;
 
 import com.nxtwave.tasktracker.common.entity.BaseEntity;
 import com.nxtwave.tasktracker.common.enums.Priority;
 import com.nxtwave.tasktracker.common.enums.TaskStatus;
-import com.nxtwave.tasktracker.user.User;
+import com.nxtwave.tasktracker.user.entity.User;
 
 import jakarta.persistence.*;
 import lombok.Getter;
