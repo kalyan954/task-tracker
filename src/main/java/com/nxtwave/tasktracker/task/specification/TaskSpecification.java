@@ -13,10 +13,7 @@ public class TaskSpecification {
     private TaskSpecification() {
     }
 
-    public static Specification<Task>
-    withFilters(
-            TaskFilterRequest filter
-    ) {
+    public static Specification<Task> withFilters(TaskFilterRequest filter) {
 
         return (root, query, cb) -> {
 

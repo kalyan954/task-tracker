@@ -6,10 +6,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,9 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nxtwave.tasktracker.common.enums.Priority;
 import com.nxtwave.tasktracker.common.enums.TaskStatus;
+import com.nxtwave.tasktracker.task.dto.ApiSuccessResponse;
 import com.nxtwave.tasktracker.task.dto.CreateTaskRequest;
 import com.nxtwave.tasktracker.task.dto.TaskFilterRequest;
 import com.nxtwave.tasktracker.task.dto.TaskResponse;
+import com.nxtwave.tasktracker.task.dto.UpdateTaskRequest;
 import com.nxtwave.tasktracker.task.dto.UpdateTaskStatusRequest;
 import com.nxtwave.tasktracker.task.service.TaskService;
 
@@ -37,10 +41,6 @@ public class TaskController {
     @PreAuthorize(
             "hasAnyRole('ADMIN','MANAGER')"
     )
-    @CacheEvict(
-        value = "tasks",
-        allEntries = true
-    )
     public ResponseEntity<TaskResponse> createTask(
             @Valid
             @RequestBody
@@ -52,10 +52,54 @@ public class TaskController {
                 .body(taskService.createTask(request));
     }
 
+    
+    @GetMapping("/{taskId}")
+    @PreAuthorize(
+            "hasAnyRole('ADMIN','MANAGER','MEMBER')"
+    )
+    public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long taskId) {
+
+        return ResponseEntity.ok(
+                taskService.getTaskById(taskId)
+        );
+    }
+
+    @PutMapping("/{taskId}")
+    @PreAuthorize(
+            "hasAnyRole('ADMIN','MANAGER')"
+    )
+    public ResponseEntity<TaskResponse> updateTask(
+            @PathVariable Long taskId,
+            @Valid @RequestBody UpdateTaskRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                taskService.updateTask(
+                        taskId,
+                        request
+                )
+        );
+    }
+
+    @DeleteMapping("/{taskId}")
+    @PreAuthorize(
+            "hasAnyRole('ADMIN','MANAGER')"
+    )
+    public ResponseEntity<ApiSuccessResponse> deleteTask(
+            @PathVariable Long taskId
+    ) {
+
+        taskService.deleteTask(taskId);
+
+        return ResponseEntity.ok(
+            new ApiSuccessResponse("Task deleted successfully")
+        );
+    }
+
+
     @PatchMapping("/{taskId}/status")
-    @CacheEvict(
-        value = "tasks",
-        allEntries = true
+    @PreAuthorize(
+        "hasAnyRole('ADMIN','MANAGER','MEMBER')"
     )
     public ResponseEntity<TaskResponse> updateTaskStatus(
             @PathVariable Long taskId,
@@ -68,10 +112,8 @@ public class TaskController {
     }
 
     @GetMapping
-    @Cacheable(
-        value = "tasks",
-        key =
-        "#filter.assigneeId + '_' + #page + '_' + #limit"
+    @PreAuthorize(
+        "hasAnyRole('ADMIN','MANAGER','MEMBER')"
     )
     public ResponseEntity<Page<TaskResponse>>getTasks(
             @RequestParam(required = false) TaskStatus status, 

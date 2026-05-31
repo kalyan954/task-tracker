@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class TaskAuthorizationService {
 
-    public void validateTaskStatusUpdatePermission(
+    public void validateTaskViewAndStatusUpdatePermission(
             Task task,
             User currentUser
     ) {
@@ -35,7 +35,29 @@ public class TaskAuthorizationService {
         }
 
         throw new UnauthorizedException(
-                "You are not authorized to update this task"
+                "You are not authorized to update/view this task"
         );
+    }
+
+    public void validateOrganizationAccess(Task task,User currentUser) {
+
+        Long taskOrganizationId =
+                task.getAssignee()
+                        .getOrganization()
+                        .getId();
+
+        Long currentUserOrganizationId =
+                currentUser
+                        .getOrganization()
+                        .getId();
+
+        if (!taskOrganizationId.equals(
+                currentUserOrganizationId
+        )) {
+
+            throw new UnauthorizedException(
+                    "You cannot access tasks from another organization"
+            );
+        }
     }
 }
