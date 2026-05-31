@@ -1,5 +1,6 @@
 package com.nxtwave.tasktracker.user.repository;
 
+import com.nxtwave.tasktracker.common.enums.Role;
 import com.nxtwave.tasktracker.user.entity.User;
 
 import org.springframework.data.domain.Page;
@@ -14,6 +15,8 @@ public interface UserRepository
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    boolean existsByRole(Role admin);
 
     Page<User> findByOrganizationId(
         Long organizationId,

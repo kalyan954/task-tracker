@@ -12,6 +12,7 @@ import com.nxtwave.tasktracker.auth.dto.LoginRequest;
 import com.nxtwave.tasktracker.auth.dto.RefreshTokenRequest;
 import com.nxtwave.tasktracker.auth.dto.RegisterRequest;
 import com.nxtwave.tasktracker.auth.service.AuthService;
+import com.nxtwave.tasktracker.task.dto.ApiSuccessResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,13 +25,13 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiSuccessResponse> register(@Valid @RequestBody RegisterRequest request) {
 
         authService.register(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .build();
+                .body(new ApiSuccessResponse("User registered successfully"));
     }
 
     @PostMapping("/login")

@@ -1,120 +1,127 @@
-package com.nxtwave.tasktracker.auth.service.imp;
+    package com.nxtwave.tasktracker.auth.service.imp;
 
-import com.nxtwave.tasktracker.auth.dto.AuthResponse;
-import com.nxtwave.tasktracker.auth.dto.LoginRequest;
-import com.nxtwave.tasktracker.auth.dto.RefreshTokenRequest;
-import com.nxtwave.tasktracker.auth.dto.RegisterRequest;
-import com.nxtwave.tasktracker.auth.service.AuthService;
+    import com.nxtwave.tasktracker.auth.dto.AuthResponse;
+    import com.nxtwave.tasktracker.auth.dto.LoginRequest;
+    import com.nxtwave.tasktracker.auth.dto.RefreshTokenRequest;
+    import com.nxtwave.tasktracker.auth.dto.RegisterRequest;
+    import com.nxtwave.tasktracker.auth.service.AuthService;
+import com.nxtwave.tasktracker.common.enums.Role;
 import com.nxtwave.tasktracker.common.exception.ResourceAlreadyExistsException;
-import com.nxtwave.tasktracker.common.exception.ResourceNotFoundException;
-import com.nxtwave.tasktracker.common.exception.UnauthorizedException;
-import com.nxtwave.tasktracker.organization.entity.Organization;
-import com.nxtwave.tasktracker.organization.repository.OrganizationRepository;
-import com.nxtwave.tasktracker.refreshToken.entity.RefreshToken;
-import com.nxtwave.tasktracker.refreshToken.service.RefreshTokenService;
-import com.nxtwave.tasktracker.security.jwt.JwtService;
-import com.nxtwave.tasktracker.user.entity.User;
-import com.nxtwave.tasktracker.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+    import com.nxtwave.tasktracker.common.exception.ResourceNotFoundException;
+    import com.nxtwave.tasktracker.common.exception.UnauthorizedException;
+    import com.nxtwave.tasktracker.organization.entity.Organization;
+    import com.nxtwave.tasktracker.organization.repository.OrganizationRepository;
+    import com.nxtwave.tasktracker.refreshToken.entity.RefreshToken;
+    import com.nxtwave.tasktracker.refreshToken.service.RefreshTokenService;
+    import com.nxtwave.tasktracker.security.jwt.JwtService;
+    import com.nxtwave.tasktracker.user.entity.User;
+    import com.nxtwave.tasktracker.user.repository.UserRepository;
+    import lombok.RequiredArgsConstructor;
+    import org.springframework.security.crypto.password.PasswordEncoder;
+    import org.springframework.stereotype.Service;
 
-@Service
-@RequiredArgsConstructor
-public class AuthServiceImpl implements AuthService {
+    @Service
+    @RequiredArgsConstructor
+    public class AuthServiceImpl implements AuthService {
 
-    private final UserRepository userRepository;
+        private final UserRepository userRepository;
 
-    private final OrganizationRepository organizationRepository;
+        private final OrganizationRepository organizationRepository;
 
-    private final PasswordEncoder passwordEncoder;
+        private final PasswordEncoder passwordEncoder;
 
-    private final JwtService jwtService;
+        private final JwtService jwtService;
 
-    private final RefreshTokenService refreshTokenService;
+        private final RefreshTokenService refreshTokenService;
 
-    @Override
-    public void register(RegisterRequest request) {
+        @Override
+        public void register(RegisterRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ResourceAlreadyExistsException("Email already exists");
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new ResourceAlreadyExistsException("Email already exists");
+            }
+
+            Organization organization = organizationRepository.findById(request.getOrganizationId())
+                            .orElseThrow(() ->
+                                    new ResourceNotFoundException("Organization not found"));
+
+            User user = new User();
+
+            user.setName(request.getName());
+
+            user.setEmail(request.getEmail());
+
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+            if (!userRepository.existsByRole(Role.ADMIN)) {
+
+                user.setRole(Role.ADMIN);
+
+            } else {
+
+                user.setRole(Role.MEMBER);
+            }
+            user.setOrganization(organization);
+
+            userRepository.save(user);
         }
 
-        Organization organization = organizationRepository.findById(request.getOrganizationId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException("Organization not found"));
+        @Override
+        public AuthResponse login(LoginRequest request) {
 
-        User user = new User();
+            User user = userRepository.findByEmail(
+                                    request.getEmail()
+                            )
+                            .orElseThrow(() ->
+                                    new UnauthorizedException(
+                                            "Invalid email or password"
+                                    )
+                            );
 
-        user.setName(request.getName());
+            boolean passwordMatches =
+                    passwordEncoder.matches(
+                            request.getPassword(),
+                            user.getPassword()
+                    );
 
-        user.setEmail(request.getEmail());
+            if (!passwordMatches) {
 
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        user.setRole(request.getRole());
-
-        user.setOrganization(organization);
-
-        userRepository.save(user);
-    }
-
-    @Override
-    public AuthResponse login(LoginRequest request) {
-
-        User user = userRepository.findByEmail(
-                                request.getEmail()
-                        )
-                        .orElseThrow(() ->
-                                new UnauthorizedException(
-                                        "Invalid email or password"
-                                )
-                        );
-
-        boolean passwordMatches =
-                passwordEncoder.matches(
-                        request.getPassword(),
-                        user.getPassword()
+                throw new UnauthorizedException(
+                        "Invalid email or password"
                 );
+            }
 
-        if (!passwordMatches) {
+            String accessToken = jwtService.generateAccessToken(user.getEmail());
 
-            throw new UnauthorizedException(
-                    "Invalid email or password"
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+            return new AuthResponse(
+                    accessToken,
+                    refreshToken.getToken()
             );
         }
 
-        String accessToken = jwtService.generateAccessToken(user.getEmail());
+        @Override
+        public AuthResponse refreshToken(RefreshTokenRequest request) {
 
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+            RefreshToken oldToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
 
-        return new AuthResponse(
-                accessToken,
-                refreshToken.getToken()
-        );
+            User user = oldToken.getUser();
+
+            refreshTokenService.revokeToken(oldToken);
+
+            String accessToken =
+                    jwtService.generateAccessToken(
+                            user.getEmail()
+                    );
+
+            RefreshToken newRefreshToken =
+                    refreshTokenService
+                            .createRefreshToken(user);
+
+            return new AuthResponse(
+                    accessToken,
+                    newRefreshToken.getToken()
+            );
+        }
     }
-
-    @Override
-    public AuthResponse refreshToken(RefreshTokenRequest request) {
-
-        RefreshToken oldToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
-
-        User user = oldToken.getUser();
-
-        refreshTokenService.revokeToken(oldToken);
-
-        String accessToken =
-                jwtService.generateAccessToken(
-                        user.getEmail()
-                );
-
-        RefreshToken newRefreshToken =
-                refreshTokenService
-                        .createRefreshToken(user);
-
-        return new AuthResponse(
-                accessToken,
-                newRefreshToken.getToken()
-        );
-    }
-}

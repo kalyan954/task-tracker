@@ -84,6 +84,8 @@ public class TaskServiceImpl implements TaskService {
 
         task.setAssignee(assignee);
 
+        task.setCreatedBy(currentUser);
+
         taskRepository.save(task);
 
         return mapToResponse(task);
