@@ -29,6 +29,8 @@ services:
 
     container_name: tasktracker-app
 
+    restart: always
+
     depends_on:
       - postgres
       - redis
