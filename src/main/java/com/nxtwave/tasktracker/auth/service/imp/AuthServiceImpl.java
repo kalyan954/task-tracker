@@ -2,6 +2,8 @@ package com.nxtwave.tasktracker.auth.service.imp;
 
 import com.nxtwave.tasktracker.auth.dto.RegisterRequest;
 import com.nxtwave.tasktracker.auth.service.AuthService;
+import com.nxtwave.tasktracker.common.exception.ResourceAlreadyExistsException;
+import com.nxtwave.tasktracker.common.exception.ResourceNotFoundException;
 import com.nxtwave.tasktracker.organization.entity.Organization;
 import com.nxtwave.tasktracker.organization.repository.OrganizationRepository;
 import com.nxtwave.tasktracker.user.entity.User;
@@ -24,12 +26,12 @@ public class AuthServiceImpl implements AuthService {
     public void register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new ResourceAlreadyExistsException("Email already exists");
         }
 
         Organization organization = organizationRepository.findById(request.getOrganizationId())
                         .orElseThrow(() ->
-                                new RuntimeException("Organization not found"));
+                                new ResourceNotFoundException("Organization not found"));
 
         User user = new User();
 
