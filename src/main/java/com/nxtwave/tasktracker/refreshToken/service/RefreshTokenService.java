@@ -5,4 +5,10 @@ import com.nxtwave.tasktracker.user.entity.User;
 
 public interface RefreshTokenService {
     RefreshToken createRefreshToken(User user);
+
+    RefreshToken verifyRefreshToken(String token);
+
+    void revokeToken(RefreshToken refreshToken);
+
+    
 }

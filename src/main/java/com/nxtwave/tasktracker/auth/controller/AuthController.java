@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nxtwave.tasktracker.auth.dto.AuthResponse;
 import com.nxtwave.tasktracker.auth.dto.LoginRequest;
+import com.nxtwave.tasktracker.auth.dto.RefreshTokenRequest;
 import com.nxtwave.tasktracker.auth.dto.RegisterRequest;
 import com.nxtwave.tasktracker.auth.service.AuthService;
 
@@ -37,6 +38,17 @@ public class AuthController {
 
         return ResponseEntity.ok(
                 authService.login(request)
+        );
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(
+            @RequestBody
+            RefreshTokenRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                authService.refreshToken(request)
         );
     }
 }

@@ -1,5 +1,7 @@
 package com.nxtwave.tasktracker.task.controller;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,10 @@ public class TaskController {
     @PreAuthorize(
             "hasAnyRole('ADMIN','MANAGER')"
     )
+    @CacheEvict(
+        value = "tasks",
+        allEntries = true
+    )
     public ResponseEntity<TaskResponse> createTask(
             @Valid
             @RequestBody
@@ -47,6 +53,10 @@ public class TaskController {
     }
 
     @PatchMapping("/{taskId}/status")
+    @CacheEvict(
+        value = "tasks",
+        allEntries = true
+    )
     public ResponseEntity<TaskResponse> updateTaskStatus(
             @PathVariable Long taskId,
             @Valid
@@ -58,6 +68,11 @@ public class TaskController {
     }
 
     @GetMapping
+    @Cacheable(
+        value = "tasks",
+        key =
+        "#filter.assigneeId + '_' + #page + '_' + #limit"
+    )
     public ResponseEntity<Page<TaskResponse>>getTasks(
             @RequestParam(required = false) TaskStatus status, 
             @RequestParam(required = false)Priority priority,

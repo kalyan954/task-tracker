@@ -2,6 +2,7 @@ package com.nxtwave.tasktracker.auth.service.imp;
 
 import com.nxtwave.tasktracker.auth.dto.AuthResponse;
 import com.nxtwave.tasktracker.auth.dto.LoginRequest;
+import com.nxtwave.tasktracker.auth.dto.RefreshTokenRequest;
 import com.nxtwave.tasktracker.auth.dto.RegisterRequest;
 import com.nxtwave.tasktracker.auth.service.AuthService;
 import com.nxtwave.tasktracker.common.exception.ResourceAlreadyExistsException;
@@ -90,6 +91,30 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(
                 accessToken,
                 refreshToken.getToken()
+        );
+    }
+
+    @Override
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+
+        RefreshToken oldToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
+
+        User user = oldToken.getUser();
+
+        refreshTokenService.revokeToken(oldToken);
+
+        String accessToken =
+                jwtService.generateAccessToken(
+                        user.getEmail()
+                );
+
+        RefreshToken newRefreshToken =
+                refreshTokenService
+                        .createRefreshToken(user);
+
+        return new AuthResponse(
+                accessToken,
+                newRefreshToken.getToken()
         );
     }
 }
