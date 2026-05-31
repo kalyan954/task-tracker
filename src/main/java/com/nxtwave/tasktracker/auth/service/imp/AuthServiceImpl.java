@@ -33,6 +33,32 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
 
     @Override
+    public void register(RegisterRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ResourceAlreadyExistsException("Email already exists");
+        }
+
+        Organization organization = organizationRepository.findById(request.getOrganizationId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Organization not found"));
+
+        User user = new User();
+
+        user.setName(request.getName());
+
+        user.setEmail(request.getEmail());
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        user.setRole(request.getRole());
+
+        user.setOrganization(organization);
+
+        userRepository.save(user);
+    }
+
+    @Override
     public AuthResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(
@@ -66,32 +92,4 @@ public class AuthServiceImpl implements AuthService {
                 refreshToken.getToken()
         );
     }
-
-    @Override
-    public void register(RegisterRequest request) {
-
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ResourceAlreadyExistsException("Email already exists");
-        }
-
-        Organization organization = organizationRepository.findById(request.getOrganizationId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException("Organization not found"));
-
-        User user = new User();
-
-        user.setName(request.getName());
-
-        user.setEmail(request.getEmail());
-
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        user.setRole(request.getRole());
-
-        user.setOrganization(organization);
-
-        userRepository.save(user);
-    }
-
-
 }
