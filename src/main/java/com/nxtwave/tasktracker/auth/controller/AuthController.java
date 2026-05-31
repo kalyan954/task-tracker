@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nxtwave.tasktracker.auth.dto.AuthResponse;
+import com.nxtwave.tasktracker.auth.dto.LoginRequest;
 import com.nxtwave.tasktracker.auth.dto.RegisterRequest;
 import com.nxtwave.tasktracker.auth.service.AuthService;
 
@@ -28,5 +30,13 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .build();
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+
+        return ResponseEntity.ok(
+                authService.login(request)
+        );
     }
 }
