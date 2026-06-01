@@ -10,18 +10,19 @@ import lombok.Data;
 @Data
 public class CreateTaskRequest {
 
-    @NotBlank
+    @NotBlank(message = "Title is required")
     private String title;
 
     private String description;
 
-    @NotNull
+    @NotNull(message = "Priority is required")
     private Priority priority;
 
-    @NotNull
+    @NotNull(message = "Assignee id is required")
     private Long assigneeId;
 
-    @NotNull
+    @NotNull(message = "Due date is required")
+    @Future(message = "due_date must be a future date")
     private LocalDate dueDate;
 }
 

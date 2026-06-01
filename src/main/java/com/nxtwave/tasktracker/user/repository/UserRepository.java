@@ -18,6 +18,11 @@ public interface UserRepository
 
     boolean existsByRole(Role admin);
 
+    boolean existsByRoleAndOrganizationId(
+        Role role,
+        Long organizationId
+    );
+
     Page<User> findByOrganizationId(
         Long organizationId,
         Pageable pageable

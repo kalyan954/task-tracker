@@ -42,7 +42,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     @Override
     @CacheEvict(
-        value = "tasks",
+        value = "taskLists",
         allEntries = true
     )
     public TaskResponse createTask(CreateTaskRequest request) {
@@ -94,7 +94,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     @Override
     @CacheEvict(
-        value = "tasks",
+        value = "taskLists",
         allEntries = true
     )
     public TaskResponse updateTaskStatus(Long taskId, UpdateTaskStatusRequest request) {
@@ -145,23 +145,26 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Cacheable(
-    value = "tasks", key =
-    "#filter.assigneeId + '_' + #filter.status + '_' + #filter.priority + '_' + #page + '_' + #limit"
+        value = "taskLists",
+        key = "#root.target.generateTaskCacheKey(#filter,#page,#limit)"
     )
     public Page<TaskResponse> getTasks(TaskFilterRequest filter, int page, int limit) {
 
+        validatePagination(page, limit);
+
         Pageable pageable = PageRequest.of(page, limit);
 
-        String email = CurrentUserUtil.getCurrentUserEmail();
-
-        User currentUser = userRepository.findByEmail(email)
-                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User currentUser = getCurrentAuthenticatedUser();
 
         if (currentUser.getRole() == Role.MEMBER) {
             filter.setAssigneeId(
                     currentUser.getId()
             );
         }
+
+        filter.setOrganizationId(
+            currentUser.getOrganization().getId()
+        );
 
         Specification<Task> specification = TaskSpecification.withFilters(filter);
 
@@ -219,7 +222,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     @Override
     @CacheEvict(
-        value = "tasks",
+        value = "taskLists",
         allEntries = true
     )
     public TaskResponse updateTask(Long taskId, UpdateTaskRequest request) {
@@ -272,7 +275,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     @Override
     @CacheEvict(
-        value = "tasks",
+        value = "taskLists",
         allEntries = true
     )
     public void deleteTask(Long taskId) {
@@ -292,5 +295,67 @@ public class TaskServiceImpl implements TaskService {
         taskAuthorizationService.validateOrganizationAccess(task, currentUser);
 
         taskRepository.delete(task);
+    }
+
+    public String generateTaskCacheKey(
+        TaskFilterRequest filter,
+        int page,
+        int limit
+    ) {
+
+        validatePagination(page, limit);
+
+        User currentUser = getCurrentAuthenticatedUser();
+
+        Long effectiveAssigneeId = filter.getAssigneeId();
+
+        if (currentUser.getRole() == Role.MEMBER) {
+            effectiveAssigneeId = currentUser.getId();
+        }
+
+        Long organizationId = currentUser.getOrganization().getId();
+
+        return "org:"
+                + organizationId
+                + ":assignee:"
+                + valueOrAll(effectiveAssigneeId)
+                + ":status:"
+                + valueOrAll(filter.getStatus())
+                + ":priority:"
+                + valueOrAll(filter.getPriority())
+                + ":page:"
+                + page
+                + ":limit:"
+                + limit;
+    }
+
+    private void validatePagination(int page, int limit) {
+
+        if (page < 0) {
+            throw new IllegalArgumentException("page must be zero or greater");
+        }
+
+        if (limit < 1 || limit > 100) {
+            throw new IllegalArgumentException("limit must be between 1 and 100");
+        }
+    }
+
+    private User getCurrentAuthenticatedUser() {
+
+        String email = CurrentUserUtil.getCurrentUserEmail();
+
+        if (email == null) {
+            throw new UnauthorizedException("Authentication is required");
+        }
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    private String valueOrAll(Object value) {
+
+        return value == null
+                ? "all"
+                : value.toString();
     }
 }

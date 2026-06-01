@@ -8,6 +8,6 @@ import lombok.Data;
 @Data
 public class UpdateTaskStatusRequest {
 
-    @NotNull
+    @NotNull(message = "Status is required")
     private TaskStatus status;
 }

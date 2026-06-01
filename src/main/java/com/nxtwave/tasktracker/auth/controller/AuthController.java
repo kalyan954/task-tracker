@@ -44,6 +44,7 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshToken(
+            @Valid
             @RequestBody
             RefreshTokenRequest request
     ) {

@@ -19,7 +19,7 @@ public class TaskSpecification {
 
             List<Predicate> predicates =
                     new ArrayList<>();
-
+                    
             if (filter.getStatus() != null) {
 
                 predicates.add(
@@ -47,6 +47,18 @@ public class TaskSpecification {
                                 root.get("assignee")
                                         .get("id"),
                                 filter.getAssigneeId()
+                        )
+                );
+            }
+
+            if (filter.getOrganizationId() != null) {
+
+                predicates.add(
+                        cb.equal(
+                                root.get("assignee")
+                                        .get("organization")
+                                        .get("id"),
+                                filter.getOrganizationId()
                         )
                 );
             }

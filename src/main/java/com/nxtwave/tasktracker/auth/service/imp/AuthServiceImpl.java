@@ -53,7 +53,10 @@ import com.nxtwave.tasktracker.common.exception.ResourceAlreadyExistsException;
 
             user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-            if (!userRepository.existsByRole(Role.ADMIN)) {
+            if (!userRepository.existsByRoleAndOrganizationId(
+                    Role.ADMIN,
+                    organization.getId()
+            )) {
 
                 user.setRole(Role.ADMIN);
 
