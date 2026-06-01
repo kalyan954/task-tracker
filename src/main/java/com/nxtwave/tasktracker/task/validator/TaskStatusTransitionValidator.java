@@ -30,12 +30,11 @@ public class TaskStatusTransitionValidator {
                     ),
 
                     TaskStatus.DONE,
-                    Set.of(),
+                    Set.of(
+                    ),
 
                     TaskStatus.BLOCKED,
-                    Set.of(
-                            TaskStatus.IN_PROGRESS
-                    )
+                    Set.of()
             );
 
         public static boolean isValidTransition(TaskStatus currentStatus, TaskStatus newStatus) {

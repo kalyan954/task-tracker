@@ -29,4 +29,8 @@ public class TaskResponse implements Serializable {
     private Long assigneeId;
 
     private String assigneeName;
+
+    private Long projectId;
+
+    private String projectName;
 }

@@ -14,6 +14,8 @@ import com.nxtwave.tasktracker.common.exception.InvalidStatusTransitionException
 import com.nxtwave.tasktracker.common.exception.ResourceNotFoundException;
 import com.nxtwave.tasktracker.common.exception.UnauthorizedException;
 import com.nxtwave.tasktracker.common.security.CurrentUserUtil;
+import com.nxtwave.tasktracker.project.entity.Project;
+import com.nxtwave.tasktracker.project.repository.ProjectRepository;
 import com.nxtwave.tasktracker.task.dto.CreateTaskRequest;
 import com.nxtwave.tasktracker.task.dto.TaskFilterRequest;
 import com.nxtwave.tasktracker.task.dto.TaskResponse;
@@ -39,6 +41,7 @@ public class TaskServiceImpl implements TaskService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final TaskAuthorizationService taskAuthorizationService;
+    private final ProjectRepository projectRepository;
 
     @Transactional
     @Override
@@ -71,6 +74,11 @@ public class TaskServiceImpl implements TaskService {
             );
         }
 
+        Project project = resolveProjectForOrganization(
+                request.getProjectId(),
+                currentUser.getOrganization().getId()
+        );
+
         Task task = new Task();
 
         task.setTitle(request.getTitle());
@@ -84,6 +92,8 @@ public class TaskServiceImpl implements TaskService {
         task.setDueDate(request.getDueDate());
 
         task.setAssignee(assignee);
+
+        task.setProject(project);
 
         task.setCreatedBy(currentUser);
 
@@ -219,6 +229,16 @@ public class TaskServiceImpl implements TaskService {
                                 ? task.getAssignee().getName()
                                 : null
                 )
+                .projectId(
+                        task.getProject() != null
+                                ? task.getProject().getId()
+                                : null
+                )
+                .projectName(
+                        task.getProject() != null
+                                ? task.getProject().getName()
+                                : null
+                )
                 .build();
     }
 
@@ -277,6 +297,15 @@ public class TaskServiceImpl implements TaskService {
                         }
 
                         task.setAssignee(assignee);
+                }
+
+                if (request.getProjectId() != null) {
+                        Project project = resolveProjectForOrganization(
+                                request.getProjectId(),
+                                currentUser.getOrganization().getId()
+                        );
+
+                        task.setProject(project);
                 }
 
                 taskRepository.save(task);
@@ -369,5 +398,21 @@ public class TaskServiceImpl implements TaskService {
         return value == null
                 ? "all"
                 : value.toString();
+    }
+
+    private Project resolveProjectForOrganization(Long projectId, Long organizationId) {
+
+        if (projectId == null) {
+            return null;
+        }
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
+        if (!project.getOrganization().getId().equals(organizationId)) {
+            throw new UnauthorizedException("Cannot link task to a project outside organization");
+        }
+
+        return project;
     }
 }

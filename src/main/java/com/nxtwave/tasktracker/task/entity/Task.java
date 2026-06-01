@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import com.nxtwave.tasktracker.common.entity.BaseEntity;
 import com.nxtwave.tasktracker.common.enums.Priority;
 import com.nxtwave.tasktracker.common.enums.TaskStatus;
+import com.nxtwave.tasktracker.project.entity.Project;
 import com.nxtwave.tasktracker.user.entity.User;
 
 import jakarta.persistence.*;
@@ -19,7 +20,8 @@ import lombok.Setter;
 @Table(name = "tasks", indexes = {
     @Index(name = "idx_task_status", columnList = "status"),
     @Index(name = "idx_task_assignee", columnList = "assignee_id"),
-    @Index(name = "idx_task_due_date", columnList = "due_date")
+    @Index(name = "idx_task_due_date", columnList = "due_date"),
+    @Index(name = "idx_task_project", columnList = "project_id")
 })
 public class Task extends BaseEntity {
     
@@ -45,6 +47,10 @@ public class Task extends BaseEntity {
 
     @Column(name = "due_date")
     private LocalDate dueDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id")
+    private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)

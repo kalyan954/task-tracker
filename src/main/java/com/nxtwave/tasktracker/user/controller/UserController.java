@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nxtwave.tasktracker.task.dto.ApiSuccessResponse;
+import com.nxtwave.tasktracker.user.dto.UpdateCurrentUserRequest;
 import com.nxtwave.tasktracker.user.dto.UpdateUserRequest;
 import com.nxtwave.tasktracker.user.dto.UserResponse;
 import com.nxtwave.tasktracker.user.service.UserService;
@@ -32,12 +33,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
     private final UserService userService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
         @Operation(summary = "List Users", description = "Get paginated list of users. Role: ADMIN")
         @ApiResponses({
                 @ApiResponse(responseCode = "200", description = "Page of users returned",
@@ -60,6 +61,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
         @Operation(summary = "Get User by ID", description = "Retrieve a user by id. Role: ADMIN")
         @ApiResponses({
                 @ApiResponse(responseCode = "200", description = "User returned",
@@ -80,7 +82,47 @@ public class UserController {
         );
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Get current user profile", description = "Get profile for the authenticated user")
+        @ApiResponses({
+                @ApiResponse(responseCode = "200", description = "Current user profile returned",
+                        content = @Content(schema = @Schema(implementation = UserResponse.class))
+                ),
+                @ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+    public ResponseEntity<UserResponse> getCurrentUserProfile() {
+
+        return ResponseEntity.ok(
+                userService.getCurrentUserProfile()
+        );
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Update current user profile", description = "Update name for the authenticated user")
+        @ApiResponses({
+                @ApiResponse(responseCode = "200", description = "Current user profile updated",
+                        content = @Content(schema = @Schema(implementation = UserResponse.class))
+                ),
+                @ApiResponse(responseCode = "400", description = "Validation error"),
+                @ApiResponse(responseCode = "401", description = "Unauthorized")
+        })
+    public ResponseEntity<UserResponse> updateCurrentUserProfile(
+            @Valid
+            @RequestBody
+            UpdateCurrentUserRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                userService.updateCurrentUserProfile(
+                        request
+                )
+        );
+    }
+
     @PutMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
         @Operation(summary = "Update User", description = "Update user details. Role: ADMIN")
         @ApiResponses({
                 @ApiResponse(responseCode = "200", description = "User updated",
@@ -107,6 +149,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
         @Operation(summary = "Delete User", description = "Delete a user by id. Role: ADMIN")
         @ApiResponses({
                 @ApiResponse(responseCode = "200", description = "User deleted",

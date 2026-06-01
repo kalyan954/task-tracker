@@ -19,6 +19,7 @@ import com.nxtwave.tasktracker.common.exception.ResourceAlreadyExistsException;
     import lombok.RequiredArgsConstructor;
     import org.springframework.security.crypto.password.PasswordEncoder;
     import org.springframework.stereotype.Service;
+    import org.springframework.transaction.annotation.Transactional;
 
     @Service
     @RequiredArgsConstructor
@@ -41,9 +42,17 @@ import com.nxtwave.tasktracker.common.exception.ResourceAlreadyExistsException;
                 throw new ResourceAlreadyExistsException("Email already exists");
             }
 
-            Organization organization = organizationRepository.findById(request.getOrganizationId())
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException("Organization not found"));
+            Organization organization;
+
+            if (request.getOrganizationId() != null) {
+                organization = organizationRepository.findById(request.getOrganizationId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Organization not found"));
+            } else {
+                organization = organizationRepository.findByName("Default Organization")
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException("Default Organization not found"));
+            }
 
             User user = new User();
 
@@ -105,6 +114,7 @@ import com.nxtwave.tasktracker.common.exception.ResourceAlreadyExistsException;
         }
 
         @Override
+        @Transactional
         public AuthResponse refreshToken(RefreshTokenRequest request) {
 
             RefreshToken oldToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());

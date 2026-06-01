@@ -15,10 +15,12 @@ public interface TaskRepository
                 JpaSpecificationExecutor<Task> {
 
     @Override
-    @EntityGraph(attributePaths = {"assignee", "assignee.organization"})
+    @EntityGraph(attributePaths = {"assignee", "assignee.organization", "project", "project.organization"})
     Optional<Task> findById(Long id);
 
     @Override
-    @EntityGraph(attributePaths = {"assignee", "assignee.organization"})
+    @EntityGraph(attributePaths = {"assignee", "assignee.organization", "project"})
     Page<Task> findAll(Specification<Task> spec, Pageable pageable);
+
+    boolean existsByProjectId(Long projectId);
 }

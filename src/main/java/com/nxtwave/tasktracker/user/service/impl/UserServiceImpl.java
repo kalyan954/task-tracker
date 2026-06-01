@@ -4,9 +4,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nxtwave.tasktracker.common.exception.ResourceNotFoundException;
 import com.nxtwave.tasktracker.common.security.CurrentUserUtil;
+import com.nxtwave.tasktracker.user.dto.UpdateCurrentUserRequest;
 import com.nxtwave.tasktracker.user.dto.UpdateUserRequest;
 import com.nxtwave.tasktracker.user.dto.UserResponse;
 import com.nxtwave.tasktracker.user.entity.User;
@@ -14,7 +16,6 @@ import com.nxtwave.tasktracker.user.repository.UserRepository;
 import com.nxtwave.tasktracker.user.security.UserAuthorizationService;
 import com.nxtwave.tasktracker.user.service.UserService;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -147,6 +148,39 @@ public class UserServiceImpl implements UserService {
         userAuthorizationService.validateOrganizationAccess(user,currentUser);
 
         userRepository.delete(user);
+    }
+
+    @Override
+    public UserResponse getCurrentUserProfile() {
+
+        String email = CurrentUserUtil.getCurrentUserEmail();
+
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
+
+        return mapToResponse(currentUser);
+    }
+
+    @Transactional
+    @Override
+    public UserResponse updateCurrentUserProfile(
+            UpdateCurrentUserRequest request
+    ) {
+
+        String email = CurrentUserUtil.getCurrentUserEmail();
+
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
+
+        currentUser.setName(request.getName());
+
+        userRepository.save(currentUser);
+
+        return mapToResponse(currentUser);
     }
 
     private UserResponse mapToResponse(

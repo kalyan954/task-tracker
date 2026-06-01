@@ -19,6 +19,7 @@ public class RegisterRequest {
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
-    @NotNull(message = "Organization id is required")
+    // Organization id is optional for smooth onboarding.
+    // If omitted, the request will use the default organization.
     private Long organizationId;
 }

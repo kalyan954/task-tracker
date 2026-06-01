@@ -20,6 +20,8 @@ public class UpdateTaskRequest {
 
     private Long assigneeId;
 
+    private Long projectId;
+
     @Future(message = "due_date must be a future date")
     private LocalDate dueDate;
 }

@@ -21,6 +21,8 @@ public class CreateTaskRequest {
     @NotNull(message = "Assignee id is required")
     private Long assigneeId;
 
+    private Long projectId;
+
     @NotNull(message = "Due date is required")
     @Future(message = "due_date must be a future date")
     private LocalDate dueDate;
