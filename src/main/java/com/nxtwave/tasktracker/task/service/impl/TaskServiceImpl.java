@@ -28,8 +28,9 @@ import com.nxtwave.tasktracker.task.validator.TaskStatusTransitionValidator;
 import com.nxtwave.tasktracker.user.entity.User;
 import com.nxtwave.tasktracker.user.repository.UserRepository;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -143,12 +144,13 @@ public class TaskServiceImpl implements TaskService {
         return mapToResponse(task);
     }
 
-    @Override
-    @Cacheable(
-        value = "taskLists",
-        key = "#root.target.generateTaskCacheKey(#filter,#page,#limit)"
-    )
-    public Page<TaskResponse> getTasks(TaskFilterRequest filter, int page, int limit) {
+        @Override
+        @Transactional(readOnly = true)
+        @Cacheable(
+                value = "taskLists",
+                key = "#root.target.generateTaskCacheKey(#filter,#page,#limit)"
+        )
+        public Page<TaskResponse> getTasks(TaskFilterRequest filter, int page, int limit) {
 
         validatePagination(page, limit);
 
@@ -172,8 +174,9 @@ public class TaskServiceImpl implements TaskService {
                 .map(this::mapToResponse);
     }
 
-    @Override
-    public TaskResponse getTaskById(Long taskId) {
+        @Override
+        @Transactional(readOnly = true)
+        public TaskResponse getTaskById(Long taskId) {
 
         Task task = taskRepository.findById(taskId)
                         .orElseThrow(() ->
@@ -233,43 +236,52 @@ public class TaskServiceImpl implements TaskService {
                                         "Task not found"
                                 )
                         );
+                String email = CurrentUserUtil.getCurrentUserEmail();
 
-        User assignee = userRepository.findById(
-                                request.getAssigneeId()
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Assignee not found"
-                                )
-                        );
+                User currentUser = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String email = CurrentUserUtil.getCurrentUserEmail();
+                // Validate organization access before allowing updates
+                taskAuthorizationService.validateOrganizationAccess(task, currentUser);
 
-        User currentUser = userRepository.findByEmail(email)
-                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                // Title: update only if provided and not blank
+                if (request.getTitle() != null) {
+                        if (!StringUtils.hasText(request.getTitle())) {
+                                throw new IllegalArgumentException("Title must not be blank");
+                        }
+                        task.setTitle(request.getTitle());
+                }
 
-        if (!currentUser.getOrganization().getId().equals(assignee.getOrganization().getId())) {
+                // Description: allow empty string as explicit update, so check for null only
+                if (request.getDescription() != null) {
+                        task.setDescription(request.getDescription());
+                }
 
-            throw new UnauthorizedException(
-                    "Cannot assign task outside organization"
-            );
-        }
+                // Priority: update if provided
+                if (request.getPriority() != null) {
+                        task.setPriority(request.getPriority());
+                }
 
-        taskAuthorizationService.validateOrganizationAccess(task, currentUser);
+                // Due date: update if provided (validated by @Future on DTO when present)
+                if (request.getDueDate() != null) {
+                        task.setDueDate(request.getDueDate());
+                }
 
-        task.setTitle(request.getTitle());
+                // Assignee: if provided, validate and set
+                if (request.getAssigneeId() != null) {
+                        User assignee = userRepository.findById(request.getAssigneeId())
+                                        .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
 
-        task.setDescription(request.getDescription());
+                        if (!currentUser.getOrganization().getId().equals(assignee.getOrganization().getId())) {
+                                throw new UnauthorizedException("Cannot assign task outside organization");
+                        }
 
-        task.setPriority(request.getPriority());
+                        task.setAssignee(assignee);
+                }
 
-        task.setDueDate(request.getDueDate());
+                taskRepository.save(task);
 
-        task.setAssignee(assignee);
-
-        taskRepository.save(task);
-
-        return mapToResponse(task);
+                return mapToResponse(task);
     }
 
     @Transactional

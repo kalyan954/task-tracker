@@ -11,18 +11,15 @@ import java.time.LocalDate;
 @Data
 public class UpdateTaskRequest {
 
-    @NotBlank(message = "Title is required")
+    // Fields are optional for partial updates. Validation for non-null values still applies where appropriate.
     private String title;
 
     private String description;
 
-    @NotNull(message = "Priority is required")
     private Priority priority;
 
-    @NotNull(message = "Assignee id is required")
     private Long assigneeId;
 
-    @NotNull(message = "Due date is required")
     @Future(message = "due_date must be a future date")
     private LocalDate dueDate;
 }
