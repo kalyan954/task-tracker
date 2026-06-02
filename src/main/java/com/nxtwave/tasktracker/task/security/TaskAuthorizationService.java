@@ -1,7 +1,7 @@
 package com.nxtwave.tasktracker.task.security;
 
 import com.nxtwave.tasktracker.common.enums.Role;
-import com.nxtwave.tasktracker.common.exception.UnauthorizedException;
+import com.nxtwave.tasktracker.common.exception.ForbiddenException;
 import com.nxtwave.tasktracker.task.entity.Task;
 import com.nxtwave.tasktracker.user.entity.User;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class TaskAuthorizationService {
             return;
         }
 
-        throw new UnauthorizedException(
+        throw new ForbiddenException(
                 "You are not authorized to update/view this task"
         );
     }
@@ -55,7 +55,7 @@ public class TaskAuthorizationService {
                 currentUserOrganizationId
         )) {
 
-            throw new UnauthorizedException(
+            throw new ForbiddenException(
                     "You cannot access tasks from another organization"
             );
         }

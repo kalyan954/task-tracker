@@ -1,6 +1,7 @@
 package com.nxtwave.tasktracker.project.service.impl;
 
 import com.nxtwave.tasktracker.common.exception.ResourceNotFoundException;
+import com.nxtwave.tasktracker.common.exception.ForbiddenException;
 import com.nxtwave.tasktracker.common.exception.UnauthorizedException;
 import com.nxtwave.tasktracker.common.security.CurrentUserUtil;
 import com.nxtwave.tasktracker.project.dto.CreateProjectRequest;
@@ -117,7 +118,7 @@ public class ProjectServiceImpl implements ProjectService {
         Long currentOrganizationId = currentUser.getOrganization().getId();
 
         if (!projectOrganizationId.equals(currentOrganizationId)) {
-            throw new UnauthorizedException("You cannot access projects from another organization");
+            throw new ForbiddenException("You cannot access projects from another organization");
         }
     }
 

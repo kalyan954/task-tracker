@@ -46,13 +46,18 @@ class TasktrackerApplicationTests {
         UserSession otherMember = registerAndLogin("Other Member", "other-rbac@example.com");
 
         createTask(admin.accessToken(), member.id(), "Member Task", null);
-        createTask(admin.accessToken(), otherMember.id(), "Other Member Task", null);
+        long otherMemberTaskId = createTask(admin.accessToken(), otherMember.id(), "Other Member Task", null);
 
         mockMvc.perform(get("/api/v1/tasks")
                         .header("Authorization", bearer(member.accessToken())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].assigneeId").value(member.id()));
+
+        mockMvc.perform(get("/api/v1/tasks/{taskId}", otherMemberTaskId)
+                        .header("Authorization", bearer(member.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
 
         mockMvc.perform(post("/api/v1/tasks")
                         .header("Authorization", bearer(member.accessToken()))
@@ -72,21 +77,21 @@ class TasktrackerApplicationTests {
         mockMvc.perform(patch("/api/v1/tasks/{taskId}/status", taskId)
                         .header("Authorization", bearer(member.accessToken()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("status", TaskStatus.IN_PROGRESS.name()))))
+                        .content(objectMapper.writeValueAsString(mapOf("status", TaskStatus.IN_PROGRESS.name()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(TaskStatus.IN_PROGRESS.name()));
 
         mockMvc.perform(patch("/api/v1/tasks/{taskId}/status", taskId)
                         .header("Authorization", bearer(member.accessToken()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("status", TaskStatus.DONE.name()))))
+                        .content(objectMapper.writeValueAsString(mapOf("status", TaskStatus.DONE.name()))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_STATUS_TRANSITION"));
 
         String oldRefreshToken = member.refreshToken();
         String refreshResponse = mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("refreshToken", oldRefreshToken))))
+                        .content(objectMapper.writeValueAsString(mapOf("refreshToken", oldRefreshToken))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty())
                 .andReturn()
@@ -97,7 +102,7 @@ class TasktrackerApplicationTests {
 
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("refreshToken", oldRefreshToken))))
+                        .content(objectMapper.writeValueAsString(mapOf("refreshToken", oldRefreshToken))))
                 .andExpect(status().isUnauthorized());
 
         mockMvc.perform(get("/api/v1/users/me")
@@ -133,7 +138,7 @@ class TasktrackerApplicationTests {
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of(
+                        .content(objectMapper.writeValueAsString(mapOf(
                                 "name", name,
                                 "email", email,
                                 "password", "Password123"
@@ -142,7 +147,7 @@ class TasktrackerApplicationTests {
 
         String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of(
+                        .content(objectMapper.writeValueAsString(mapOf(
                                 "email", email,
                                 "password", "Password123"
                         ))))
@@ -190,7 +195,7 @@ class TasktrackerApplicationTests {
         String response = mockMvc.perform(post("/api/v1/projects")
                         .header("Authorization", bearer(accessToken))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of(
+                        .content(objectMapper.writeValueAsString(mapOf(
                                 "name", name,
                                 "description", "Project for integration test"
                         ))))
@@ -231,6 +236,16 @@ class TasktrackerApplicationTests {
 
         return body;
     }
+
+        private Map<String, Object> mapOf(Object... entries) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                for (int i = 0; i < entries.length; i += 2) {
+                        String key = (String) entries[i];
+                        Object val = entries[i + 1];
+                        m.put(key, val);
+                }
+                return m;
+        }
 
     private String bearer(String accessToken) {
 

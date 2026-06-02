@@ -1,8 +1,10 @@
 package com.nxtwave.tasktracker.refreshToken.service.impl;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.nxtwave.tasktracker.common.exception.UnauthorizedException;
@@ -19,6 +21,9 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
+    @Value("${jwt.refresh-token-expiration}")
+    private long refreshTokenExpiration;
+
     @Override
     public RefreshToken createRefreshToken(User user) {
 
@@ -33,7 +38,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         refreshToken.setRevoked(false);
 
         refreshToken.setExpiryDate(LocalDateTime.now()
-                        .plusDays(7)
+                        .plus(Duration.ofMillis(refreshTokenExpiration))
         );
 
         return refreshTokenRepository.save(refreshToken);

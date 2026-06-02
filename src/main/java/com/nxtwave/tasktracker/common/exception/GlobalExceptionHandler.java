@@ -68,6 +68,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbiddenException(ForbiddenException ex) {
+
+        return buildErrorResponse(
+                HttpStatus.FORBIDDEN,
+                "FORBIDDEN",
+                ex.getMessage()
+        );
+    }
+
     @ExceptionHandler(InvalidStatusTransitionException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidStatusTransition(InvalidStatusTransitionException ex) {
 

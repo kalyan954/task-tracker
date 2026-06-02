@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.nxtwave.tasktracker.common.enums.Role;
 import com.nxtwave.tasktracker.common.enums.TaskStatus;
+import com.nxtwave.tasktracker.common.exception.ForbiddenException;
 import com.nxtwave.tasktracker.common.exception.InvalidStatusTransitionException;
 import com.nxtwave.tasktracker.common.exception.ResourceNotFoundException;
 import com.nxtwave.tasktracker.common.exception.UnauthorizedException;
@@ -69,7 +70,7 @@ public class TaskServiceImpl implements TaskService {
 
         if (!currentUser.getOrganization().getId().equals(assignee.getOrganization().getId())) {
 
-            throw new UnauthorizedException(
+            throw new ForbiddenException(
                     "Cannot assign task outside organization"
             );
         }
@@ -293,7 +294,7 @@ public class TaskServiceImpl implements TaskService {
                                         .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
 
                         if (!currentUser.getOrganization().getId().equals(assignee.getOrganization().getId())) {
-                                throw new UnauthorizedException("Cannot assign task outside organization");
+                                throw new ForbiddenException("Cannot assign task outside organization");
                         }
 
                         task.setAssignee(assignee);
@@ -410,7 +411,7 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
         if (!project.getOrganization().getId().equals(organizationId)) {
-            throw new UnauthorizedException("Cannot link task to a project outside organization");
+            throw new ForbiddenException("Cannot link task to a project outside organization");
         }
 
         return project;
